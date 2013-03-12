@@ -1,0 +1,72 @@
+.stateTable {
+	border: 1px solid black;
+}
+
+.stateTable input {
+	background: inherit;	
+	border: 0px;
+	font-family: "Lucida Console", "Courier New", Monospace;
+	color: #000000;
+}
+
+.stateLabel {
+	background: #aaaaaa;
+	width: 4em;
+	font-weight: bold;
+	text-align: center;
+}
+
+.stateVal {
+	background: #cccccc;	
+	text-align: center;
+}
+
+canvas {
+	border: 8px solid #222222;
+}
+
+canvas:focus {
+	border: 8px solid DarkOrange;
+}
+
+#codeEditor {
+	border: 1px solid #333333;
+	margin: 5px;
+	position: absolute;
+	left: 10px;
+	top: 10px;
+}
+
+#monitor1 {
+	position: absolute;
+	top: 10px;
+	left: 450px;
+}
+
+#runButtons {
+	position: absolute;
+	top: 420px;
+	left: 10px;
+}
+
+#stateAndConsole {
+	position: absolute;
+	top: 450px;
+	left: 10px;
+}
+
+.errorLine {
+	background: #ff6666 !important;
+}
+
+.currentLine {
+	background: #66ff66 !important;
+}
+
+.breakpoint {
+	background: red !important;
+	color: white !important;
+	font-weight: bold !important;
+}
+
+

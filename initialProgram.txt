@@ -1,0 +1,125 @@
+hwn i
+:hwloop
+ife i,0
+set pc, begin
+sub i,1
+hwq i
+ife a,0xf615
+ife b,0x7349
+set pc,initDisplay
+ife a, 0xb402
+ife b, 0x12d0
+set pc, initClock
+ife a, 0x7406
+ife b, 0x30cf
+set pc,initKeyboard
+set pc,hwloop
+
+:initDisplay
+set a,0
+set b,end
+hwi i
+set pc, hwloop
+
+:initClock
+set a,0
+set b,1
+hwi i
+ias intHandle
+set b, 1
+set a, 2
+hwi i
+set pc, hwloop
+
+:initKeyboard
+set z, i
+set pc, hwloop
+
+:mask
+dat 0x7000
+
+:intHandle
+xor [mask], 0x7700
+push c
+set a, 1
+hwi z
+ife c,0
+set pc, skipKB
+bor c, [mask]
+set [end2],c
+:skipKB
+pop c
+rfi 0
+
+:begin
+set i,0
+:loop
+set a,i
+jsr convertBCD
+set a,x
+jsr displayA
+set a,y
+add i,1
+ifn i,10000
+set pc,loop
+hlt
+
+:displayA
+set push,a
+set push,b
+set push,c
+set c,3
+:loopda
+set b,a
+and b,0xf
+jsr displayDigit
+shr a,4
+sub c,1
+ifn c,0xffff
+set pc, loopda
+set c, pop
+set b, pop
+set a, pop
+set pc, pop
+
+:displayDigit
+set push,b
+ifg b,9
+add b,7
+add b,0x30
+bor b,[mask]
+set [end + c],b
+set b,pop
+set pc,pop
+
+:convertBCD
+set push, b
+set push, c
+set x,0
+:bcdloop
+set b,a
+set c,a
+div b,1000
+mod c,1000
+bor x,b
+shl x,4
+set b,c
+div b,100
+mod c,100
+bor x,b
+shl x,4
+set b,c
+div b,10
+mod c,10
+bor x,b
+shl x,4
+bor x,c
+set c,pop
+set b,pop
+set pc,pop
+:end
+dat 0,0,0,0,0,0,0,0
+dat 0,0,0,0,0,0,0,0
+dat 0,0,0,0,0,0,0,0
+dat 0,0,0,0,0,0,0,0
+:end2

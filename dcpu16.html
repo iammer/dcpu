@@ -1,0 +1,129 @@
+<html>
+<head>
+	<title>DCPU16Emu</title>
+	<link rel="stylesheet" type="text/css" href="codemirror.css"/>
+	<link rel="stylesheet" type="text/css" href="dcpu.css"/>
+	
+	<script type="text/javascript" src="utils.js"></script>
+	<script type="text/javascript" src="dcpu.js"></script>
+	<script type="text/javascript" src="dcpuHardware.js"></script>
+	<script type="text/javascript" src="dcpuAsm.js"></script>
+	<script type="text/javascript" src="dcpuMonitor.js"></script>
+	<script type="text/javascript" src="dcpuStateDisplay.js"></script>
+	<script type="text/javascript" src="codemirror.js"></script>
+	<script type="text/javascript" src="dcpuMode.js"></script>
+	<script type="text/javascript" src="codeEditor.js"></script>
+	
+	<script type="text/javascript">
+		
+		
+		var ide={
+			init: function() {
+				this.codeEditor=new DCPUEditor(byId('codeEditor'),this);
+				this.codeEditor.loadRemote('initialProgram.txt');
+				this.assembler=dcpuAsm;
+				this.assembler.init();
+				this.monitor=new DCPUMonitor(byId('monitor1'));
+				this.stateDisplay=new DCPUStateDisplay(byId('stateDiv'));
+				this.dcpu=new DCPU({
+					numKeyboards: 1,
+					numClocks: 1
+				},bind(this,function() {
+					this.dcpu.addHardware(this.monitor);
+					this.monitor.start();
+					
+					var cpu=this.dcpu;
+					var kbElement=byId('monitor1');
+					['keypress','keyup','keydown'].each(function(name) {
+						addEvent(kbElement,name,function(e) {
+							cpu.keyevent(0,name,e.charCode || e.keyCode);
+						});
+					});
+					
+					this.stateDisplay.attachCPU(this.dcpu);
+					this.stateDisplay.attachEditor(this.codeEditor);
+					
+					this.dcpu.setDebugMode(true);
+					this.dcpu.sendState();
+				}));
+				
+				this.console=byId('consoleDiv');
+				
+			},
+			message: function(text) {
+				var m=newEle('div',text2html(text),'consoleMessage');
+				this.console.appendChild(m);
+				
+			},
+			step: function() {
+				this.dcpu.step();
+			},
+			run: function() {
+				this.dcpu.start();
+				this.monitor.focus();
+			},
+			pause: function() {
+				this.dcpu.pause();
+			},
+			reset: function(reload) {
+				this.dcpu.reset(bind(this,function() {
+					this.monitor.reset();
+					this.debugInfo=undefined;
+					this.stateDisplay.debugInfo=undefined;
+					this.codeEditor.setSteppingLine(-1);
+					if (reload) {
+						this.load();
+					} else {
+						this.dcpu.sendState();
+					}
+				}));
+			},
+			load: function(offset) {
+				if (typeof offset=='undefined') {
+					offset=0;
+				}
+				
+				this.dcpu.setMem(offset,this.assembler.assemble(this.codeEditor.getValue()));
+				this.debugInfo=this.assembler.debugInfo;
+				var stateDisplay=this.stateDisplay;
+				stateDisplay.debugInfo=this.debugInfo;
+				this.dcpu.sendState(function() {
+					stateDisplay.updateEditor(stateDisplay.lastState);
+				});
+				this.debugInfo.errors.each(bind(this,function(e) {
+					this.message(e.type + " on line: " + (e.line + 1) + " --  " + e.message + ":  \"" + e.text + "\"");
+					this.codeEditor.highlightError(e.line);
+				}));
+				
+			}
+		}
+		
+		addEvent(window,'load',function() {
+			ide.init();
+		});
+	
+		
+		function asHex(v) {
+			return typeof v=='number'?zeroPad((v&0xffff).toString(16),4):v;
+		}
+		
+		
+	</script>
+</head>
+<body>
+	<div id='codeEditor'></div>
+	<canvas tabindex="1" id="monitor1"></canvas><br/>
+	<div id="runButtons">
+		<input type="button" value="assemble & load" onclick="ide.load(0)"/>
+		<input type="button" value="step" onclick="ide.step()"/>
+		<input type="button" value="reset" onclick="ide.reset();"/>
+		<input type="button" value="reset & reload" onclick="ide.reset(true)"/>
+		<input type="button" value="run" onclick="ide.run();"/>
+		<input type="button" value="pause" onclick="ide.pause();"/>
+	</div>
+	<div id="stateAndConsole">
+		<div id="stateDiv"></div>
+		<div id="consoleDiv"></div>
+	</div>
+</body>
+</html>
